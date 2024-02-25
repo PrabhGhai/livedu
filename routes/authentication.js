@@ -75,7 +75,6 @@ router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-
     if (user && (await bcrypt.compare(password, user.password))) {
       const authClaims = [
         { name: user.username },
@@ -87,14 +86,17 @@ router.post("/login", async (req, res) => {
       });
 
       res.json({
+        _id: user._id,
         token,
         expiration: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       });
     } else {
-      res.status(401).json({ error: "Unauthorized User" });
+      res
+        .status(401)
+        .json({ message: "Either username or password is wrong." });
     }
   } catch (error) {
-    res.status(500).json({ error: "An error occurred" });
+    res.status(500).json({ message: "An error occurred" });
   }
 });
 
