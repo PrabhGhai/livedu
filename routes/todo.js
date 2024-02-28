@@ -29,7 +29,10 @@ router.post("/create-todo", authenticateToken, async (req, res) => {
 router.get("/getAll-todos", authenticateToken, async (req, res) => {
   try {
     const { id } = req.headers;
-    const user = await User.findById(id).populate("todo");
+    const user = await User.findById(id).populate({
+      path: "todo",
+      options: { sort: { createdAt: -1 } },
+    });
     return res.json({ data: user.todo });
   } catch (error) {
     return res.status(500).json({
