@@ -23,8 +23,8 @@ const user = new mongoose.Schema(
     },
     role: {
       type: String,
-      default: "user",
-      enum: ["user", "tutor", "admin"],
+      default: "student",
+      enum: ["student", "tutor", "admin"],
     },
     stausOfPage: {
       type: String,
@@ -42,8 +42,24 @@ const user = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    coursesEnrolled: [],
-    coursesCreated: [],
+    todo: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "todo",
+      },
+    ],
+    coursesEnrolled: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "courses",
+      },
+    ],
+    coursesCreated: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "courses",
+      },
+    ],
     earning: {
       type: Number,
       default: 0,

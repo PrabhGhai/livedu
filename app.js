@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const authentication = require("./routes/authentication");
+const todo = require("./routes/todo");
 require("dotenv").config();
 const PORT = process.env.PORT || 1000;
 app.use(cors());
@@ -12,6 +13,7 @@ require("./conn/conn");
 
 //Calling Routes
 app.use("/api/v1", authentication);
+app.use("/api2/v1", todo);
 
 //SERVER
 app.listen(PORT, () => {

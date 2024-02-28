@@ -2,7 +2,7 @@ const router = require("express").Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/user");
-
+const { authenticateToken } = require("./userAuth");
 //creating User
 
 router.post("/user-signUp", async (req, res) => {
@@ -10,11 +10,11 @@ router.post("/user-signUp", async (req, res) => {
     // Validate username format
     const usernameRegex = /^[a-z0-9_.]+$/;
     const usernameLength = req.body.username.length;
-    if (!usernameRegex.test(req.body.username) || usernameLength < 5) {
+    if (!usernameRegex.test(req.body.username) || usernameLength < 4) {
       return res.status(400).json({
         status: "Error",
         message:
-          usernameLength < 5
+          usernameLength < 4
             ? "Username must have atleast 4 characters."
             : "Username should be lowercase, and may contain only letters, numbers, underscores, and dots. ",
       });
@@ -75,7 +75,7 @@ router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && bcrypt.compare(password, user.password)) {
       const authClaims = [
         { name: user.username },
         { role: user.role },
@@ -87,8 +87,8 @@ router.post("/login", async (req, res) => {
 
       res.json({
         _id: user._id,
+        role: user.role,
         token,
-        expiration: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       });
     } else {
       res
@@ -97,6 +97,18 @@ router.post("/login", async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "An error occurred" });
+  }
+});
+
+//Get Users (individual) Profile Data
+router.get("/getUserData", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const data = await User.findById(id);
+    return res.status(200).json(data);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "An error occurred" });
   }
 });
 
