@@ -112,5 +112,51 @@ router.get("/getUserData", authenticateToken, async (req, res) => {
   }
 });
 
-//update Avatar
+//update username
+router.put("/change-username", authenticateToken, async (req, res) => {
+  try {
+    //Validating username
+    const usernameRegex = /^[a-z0-9_.]+$/;
+    const usernameLength = req.body.username.length;
+    if (!usernameRegex.test(req.body.username) || usernameLength < 4) {
+      return res.status(400).json({
+        status: "Error",
+        message:
+          usernameLength < 4
+            ? "Username must have atleast 4 characters."
+            : "Username should be lowercase, and may contain only letters, numbers, underscores, and dots. ",
+      });
+    }
+
+    // Check username  already exists
+    const usernameExists = await User.findOne({ username: req.body.username });
+    if (usernameExists) {
+      return res.status(400).json({
+        status: "Error",
+        message: "Username already exists",
+      });
+    }
+    const { id } = req.headers;
+    const userIdData = await User.findByIdAndUpdate(id, {
+      username: req.body.username,
+    });
+
+    // Check if user with the given ID exists
+    if (!userIdData) {
+      return res.status(404).json({
+        status: "Error",
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Username updated successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "An error occurred" });
+  }
+});
+
 module.exports = router;
