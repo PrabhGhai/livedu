@@ -3,6 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/user");
 const { authenticateToken } = require("./userAuth");
+const multer = require("multer");
+const cloudinary = require("../helper/cloudinary");
+const user = require("../Models/user");
+
 //creating User
 
 router.post("/user-signUp", async (req, res) => {
@@ -158,5 +162,41 @@ router.put("/change-username", authenticateToken, async (req, res) => {
     return res.status(500).json({ message: "An error occurred" });
   }
 });
+
+//update avatar
+const storage = multer.diskStorage({});
+const upload = multer({ storage: storage });
+router.put(
+  "/update-avatar",
+  authenticateToken,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      // Check if an image was provided
+      if (!req.file) {
+        return res.status(400).json({
+          status: "Error",
+          message: "No image provided",
+        });
+      }
+
+      // Upload image to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path);
+
+      // save changes to db
+      await user.findByIdAndUpdate(req.headers.id, {
+        avatar: result.secure_url,
+      });
+
+      return res.status(200).json({
+        status: "Success",
+        message: "Image updated successfully",
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "An error occurred" });
+    }
+  }
+);
 
 module.exports = router;
