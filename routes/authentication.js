@@ -199,4 +199,28 @@ router.put(
   }
 );
 
+//Update Desc
+router.put("/update-user-desc", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const { desc } = req.body;
+    const userIdData = await User.findByIdAndUpdate(id, { desc });
+
+    // Check if user with the given ID exists
+    if (!userIdData) {
+      return res.status(404).json({
+        status: "Error",
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Description updated successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "An error occurred" });
+  }
+});
 module.exports = router;
