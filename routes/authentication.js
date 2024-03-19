@@ -76,9 +76,12 @@ router.post("/user-signUp", async (req, res) => {
 
 //Signing In User
 router.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
-  user &&
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid Credentials" });
+    }
     bcrypt.compare(password, user.password, (err, data) => {
       if (data) {
         const authClaims = [
@@ -96,10 +99,12 @@ router.post("/login", async (req, res) => {
           token,
         });
       } else {
-        res.status(400).json({ message: "Invalid credentials" });
+        return res.status(400).json({ message: "Invalid credentials" });
       }
     });
-  return res.status(400).json({ message: "Invalid credentials" });
+  } catch (error) {
+    return res.status(400).json({ message: "Internal Error" });
+  }
 });
 
 //Get Users (individual) Profile Data
