@@ -76,32 +76,30 @@ router.post("/user-signUp", async (req, res) => {
 
 //Signing In User
 router.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (user && bcrypt.compare(password, user.password)) {
-      const authClaims = [
-        { name: user.username },
-        { role: user.role },
-        { jti: jwt.sign({}, "your-secret-key") },
-      ];
-      const token = jwt.sign({ authClaims }, "your-secret-key", {
-        expiresIn: "30d",
-      });
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+  user &&
+    bcrypt.compare(password, user.password, (err, data) => {
+      if (data) {
+        const authClaims = [
+          { name: user.username },
+          { role: user.role },
+          { jti: jwt.sign({}, "your-secret-key") },
+        ];
+        const token = jwt.sign({ authClaims }, "your-secret-key", {
+          expiresIn: "30d",
+        });
 
-      res.json({
-        _id: user._id,
-        role: user.role,
-        token,
-      });
-    } else {
-      res
-        .status(401)
-        .json({ message: "Either username or password is wrong." });
-    }
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred" });
-  }
+        res.json({
+          _id: user._id,
+          role: user.role,
+          token,
+        });
+      } else {
+        res.status(400).json({ message: "Invalid credentials" });
+      }
+    });
+  return res.status(400).json({ message: "Invalid credentials" });
 });
 
 //Get Users (individual) Profile Data
