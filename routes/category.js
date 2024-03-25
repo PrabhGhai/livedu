@@ -19,7 +19,7 @@ router.post("/add-catgeory", async (req, res) => {
   }
 });
 
-router.get("/get-all-catgeory", async (req, res) => {
+router.get("/get-all-category", async (req, res) => {
   try {
     const data = await Category.find();
     res.status(200).json({
