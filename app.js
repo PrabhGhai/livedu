@@ -4,6 +4,7 @@ const cors = require("cors");
 const authentication = require("./routes/authentication");
 const todo = require("./routes/todo");
 const cat = require("./routes/category");
+const course = require("./routes/courses");
 require("dotenv").config();
 const PORT = process.env.PORT || 1000;
 app.use(cors());
@@ -15,6 +16,7 @@ require("./conn/conn");
 //Calling Routes
 app.use("/api/v1", authentication);
 app.use("/api/v1", cat);
+app.use("/api/v1", course);
 app.use("/api2/v1", todo);
 
 //SERVER
