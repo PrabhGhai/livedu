@@ -6,6 +6,7 @@ const { authenticateToken } = require("./userAuth");
 const multer = require("multer");
 const cloudinary = require("../helper/cloudinary");
 const user = require("../Models/user");
+const nodemailer = require("nodemailer");
 
 //creating User
 
@@ -226,4 +227,111 @@ router.put("/update-user-desc", authenticateToken, async (req, res) => {
     return res.status(500).json({ message: "An error occurred" });
   }
 });
+
+//change password
+router.put("/change-password", authenticateToken, async (req, res) => {
+  try {
+    const { currPass, newPass, confirmNewPass } = req.body;
+    const { id } = req.headers;
+
+    // Retrieve the user from the database
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // Compare the current password with the one stored in the database
+    const isPasswordCorrect = await bcrypt.compare(
+      currPass,
+      existingUser.password
+    );
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Check if new password matches the confirmation
+    if (newPass !== confirmNewPass) {
+      return res.status(400).json({ message: "Passwords did not match" });
+    }
+
+    // Hash the new password
+    const hashPass = await bcrypt.hash(newPass, 10);
+
+    // Update the user's password in the database
+    await User.findByIdAndUpdate(id, { password: hashPass });
+
+    return res.status(200).json({ message: "Password updated" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "An error occurred" });
+  }
+});
+
+//forgot-password
+router.post("/forgot-password", authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.body;
+    const { id } = req.headers;
+    const checkSameUser = await User.findById(id);
+    if (email !== checkSameUser.email) {
+      return res.status(400).json({ message: "Email does not match." });
+    }
+    const existingUser = await User.findOne({ email });
+
+    if (!existingUser) {
+      return res.status(400).json({ message: "Email is incorrect." });
+    }
+    const token = jwt.sign({ id: existingUser._id }, "your-secret-key", {
+      expiresIn: "5m",
+    });
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "ghaiprabhghai@gmail.com",
+        pass: "cqqw nnyh xxof nxqw",
+      },
+    });
+
+    var mailOptions = {
+      from: "ghaiprabhghai@gmail.com",
+      to: email,
+      subject: "Reset Password",
+      html: `<b>Dear User,</b>
+           <p>You have requested to reset your password. Please click on the following link to reset your password:</p>
+           <p><a href="http://localhost:3000/reset-password/${token}">Reset Password</a></p>
+           <b>The link will be active for 5 minutes. </b>
+           <p>If you did not request this password reset, please ignore this email. If you have any questions or concerns, please contact our support team.</p>
+           <p>Best regards,<br/>LivEdu Team</p>`,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        return res.status(400).json({ message: "Error while sending email" });
+      } else {
+        return res.status(200).json({ message: "Email sent" });
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "External server error" });
+  }
+});
+
+//reset-password
+router.post("/reset-password/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPass, confirmPass } = req.body;
+    if (newPass !== confirmPass) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+    const decode = await jwt.verify(token, "your-secret-key");
+    const id = decode.id;
+    const hashPass = await bcrypt.hash(newPass, 10);
+    await User.findByIdAndUpdate(id, { password: hashPass });
+    return res.status(200).json({ message: "Password updated" });
+  } catch (error) {
+    return res.status(500).json({ message: "Invalid Token" });
+  }
+});
+
 module.exports = router;

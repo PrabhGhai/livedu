@@ -1,5 +1,26 @@
 const mongoose = require("mongoose");
 
+const reviewSchema = new mongoose.Schema(
+  {
+    reviewer: {
+      type: mongoose.Types.ObjectId,
+      ref: "User", // Assuming reviews are written by users
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
 const courses = new mongoose.Schema(
   {
     thumbnail: {
@@ -49,10 +70,17 @@ const courses = new mongoose.Schema(
         },
       ],
     ],
-    user: {
+    courseCreatedBy: {
       type: mongoose.Types.ObjectId,
-      ref: "user",
+      ref: "User",
     },
+    studentsEnrolled: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    reviews: [reviewSchema],
   },
   { timestamps: true }
 );

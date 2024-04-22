@@ -33,13 +33,6 @@ const user = new mongoose.Schema(
       default: "none",
       enum: ["none", "in progress", "verified"],
     },
-    resume: {
-      type: String,
-    },
-
-    ytChannel: {
-      type: String,
-    },
     followers: {
       type: Number,
       default: 0,
@@ -51,6 +44,12 @@ const user = new mongoose.Schema(
       },
     ],
     coursesEnrolled: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "courses",
+      },
+    ],
+    favouriteCourses: [
       {
         type: mongoose.Types.ObjectId,
         ref: "courses",
