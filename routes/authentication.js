@@ -7,6 +7,7 @@ const multer = require("multer");
 const cloudinary = require("../helper/cloudinary");
 const user = require("../Models/user");
 const nodemailer = require("nodemailer");
+const Payment = require("../Models/payment");
 
 //creating User
 
@@ -112,7 +113,7 @@ router.post("/login", async (req, res) => {
 router.get("/getUserData", authenticateToken, async (req, res) => {
   try {
     const { id } = req.headers;
-    const data = await User.findById(id);
+    const data = await User.findById(id).select("-password");
     return res.status(200).json(data);
   } catch (error) {
     console.log(error);
@@ -331,6 +332,107 @@ router.post("/reset-password/:token", async (req, res) => {
     return res.status(200).json({ message: "Password updated" });
   } catch (error) {
     return res.status(500).json({ message: "Invalid Token" });
+  }
+});
+
+//get tutor profile to viewUser with username
+router.get("/viewUser/:username", async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ username: username })
+      .select("-password")
+      .populate("coursesCreated");
+    if (!user) {
+      return res.status(400).json({ message: "No user with this username" });
+    }
+    if (user.role === "tutor") {
+      return res.status(200).json({ user });
+    } else {
+      return res.status(400).json({ message: "No user with this username" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//order history
+router.get("/order-history", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const data = await Payment.find({ paymentBy: id })
+      .populate("courseEnrolled")
+      .sort({ createdAt: -1 });
+    const formattedData = data.map((payment) => {
+      const formattedCreatedAt = new Date(payment.createdAt).toLocaleString();
+      return { ...payment.toObject(), createdAt: formattedCreatedAt };
+    });
+    res.status(200).json({ data: formattedData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//payment history
+router.get("/payment-history", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const data = await Payment.find({ paymentToTutor: id })
+      .populate("courseEnrolled")
+      .sort({ createdAt: -1 });
+    const formattedData = data.map((payment) => {
+      const formattedCreatedAt = new Date(payment.createdAt).toLocaleString();
+      return { ...payment.toObject(), createdAt: formattedCreatedAt };
+    });
+    res.status(200).json({ data: formattedData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/payment-history-time", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const { timePeriod } = req.query;
+    let startDate;
+    switch (timePeriod) {
+      case "today":
+        startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case "past7days":
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 6);
+        break;
+      case "past28days":
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 27);
+        break;
+      default:
+        startDate = null; // Fetch all time if no time period specified
+        break;
+    }
+
+    const query = { paymentToTutor: id };
+    if (startDate) {
+      query.createdAt = { $gte: startDate };
+    }
+
+    const data = await Payment.find(query)
+      .populate("courseEnrolled")
+      .sort({ createdAt: -1 });
+
+    const formattedData = data.map((payment) => {
+      const formattedCreatedAt = new Date(payment.createdAt).toLocaleString();
+      return { ...payment.toObject(), createdAt: formattedCreatedAt };
+    });
+
+    res.status(200).json({ data: formattedData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 

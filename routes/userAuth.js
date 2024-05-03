@@ -10,9 +10,7 @@ const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, "your-secret-key", (err, user) => {
     if (err) {
-      return res
-        .status(403)
-        .json({ message: "Not authenticated, please signup or login " });
+      return res.status(403).json({ message: "Please LogIn" });
     }
     req.user = user;
     next();

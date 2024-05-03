@@ -4,6 +4,8 @@ const Courses = require("../Models/courseModel");
 const { authenticateToken } = require("./userAuth");
 const Requests = require("../Models/TutorRequest");
 const nodemailer = require("nodemailer");
+const moment = require("moment");
+const Payment = require("../Models/payment");
 // API endpoint to fetch the number of users
 router.get("/count-users", authenticateToken, async (req, res) => {
   try {
@@ -192,4 +194,119 @@ router.put("/acceptTutorRequest", authenticateToken, async (req, res) => {
   }
 });
 
+router.get("/user-signups", async (req, res) => {
+  try {
+    const currentDate = moment().startOf("day");
+    const dates = [];
+    const userCounts = [];
+
+    for (let i = 0; i < 28; i++) {
+      const startDate = currentDate.clone().subtract(i, "days").startOf("day");
+      const endDate = currentDate.clone().subtract(i, "days").endOf("day");
+      const count = await User.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate },
+      });
+      dates.unshift(startDate.format("DD MMM")); // Add dates in reverse order
+      userCounts.unshift(count); // Add user counts in reverse order
+    }
+
+    res.json({ dates, userCounts });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/course-created-data", async (req, res) => {
+  try {
+    const currentDate = moment().startOf("day");
+    const dates = [];
+    const courseCounts = [];
+
+    for (let i = 0; i < 28; i++) {
+      const startDate = currentDate.clone().subtract(i, "days").startOf("day");
+      const endDate = currentDate.clone().subtract(i, "days").endOf("day");
+      const count = await Courses.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate },
+      });
+      dates.unshift(startDate.format("DD MMM")); // Add dates in reverse order
+      courseCounts.unshift(count); // Add course counts in reverse order
+    }
+
+    res.json({ dates, courseCounts });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/new-users-per-month", async (req, res) => {
+  try {
+    const currentDate = moment().startOf("month");
+    const months = [];
+    const userCounts = [];
+
+    for (let i = 0; i < 12; i++) {
+      const startDate = currentDate
+        .clone()
+        .subtract(i, "months")
+        .startOf("month");
+      const endDate = currentDate.clone().subtract(i, "months").endOf("month");
+      const count = await User.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate },
+      });
+      const monthName = startDate.format("MMM");
+      months.unshift(monthName);
+      userCounts.unshift(count);
+    }
+
+    res.json({ months, userCounts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+router.get("/new-courses-per-month", async (req, res) => {
+  try {
+    const currentDate = moment().startOf("month");
+    const months = [];
+    const courseCounts = [];
+
+    for (let i = 0; i < 12; i++) {
+      const startDate = currentDate
+        .clone()
+        .subtract(i, "months")
+        .startOf("month");
+      const endDate = currentDate.clone().subtract(i, "months").endOf("month");
+      const count = await Courses.countDocuments({
+        createdAt: { $gte: startDate, $lte: endDate },
+      });
+      const monthName = startDate.format("MMM");
+      months.unshift(monthName);
+      courseCounts.unshift(count);
+    }
+
+    res.json({ months, courseCounts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//all  payment history
+router.get("/all-payment-history", async (req, res) => {
+  try {
+    const data = await Payment.find()
+      .populate("courseEnrolled")
+      .sort({ createdAt: -1 });
+    const formattedData = data.map((payment) => {
+      const formattedCreatedAt = new Date(payment.createdAt).toLocaleString();
+      return { ...payment.toObject(), createdAt: formattedCreatedAt };
+    });
+    res.status(200).json({ data: formattedData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
 module.exports = router;
