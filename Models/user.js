@@ -65,6 +65,16 @@ const user = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    bankDetails: {
+      type: mongoose.Types.ObjectId,
+      ref: "bankdetails",
+    },
+    withdrawlRequests: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "withdraw",
+      },
+    ],
   },
   { timestamps: true }
 );

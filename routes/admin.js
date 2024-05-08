@@ -6,6 +6,7 @@ const Requests = require("../Models/TutorRequest");
 const nodemailer = require("nodemailer");
 const moment = require("moment");
 const Payment = require("../Models/payment");
+const Withdraw = require("../Models/withdraw");
 // API endpoint to fetch the number of users
 router.get("/count-users", authenticateToken, async (req, res) => {
   try {
@@ -309,4 +310,255 @@ router.get("/all-payment-history", async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
+//get total revenue
+router.get("/getTotalRevnue", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const checkUser = await User.findById(id);
+    var money = 0;
+    if (checkUser && checkUser.role === "admin") {
+      const amount = await Payment.find({ success: true });
+      for (let items of amount) {
+        money += items.amount;
+      }
+      return res.json({ money });
+    }
+    return res.status(400).json({ message: "Not an admin" });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+router.get("/getTotalRevenueThisMonth", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const checkUser = await User.findById(id);
+    if (checkUser && checkUser.role === "admin") {
+      const startDate = moment().startOf("month").toDate();
+      const endDate = moment().endOf("month").toDate();
+      const totalAmount = await Payment.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            success: true,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+      ]);
+      const money = totalAmount.length > 0 ? totalAmount[0].totalAmount : 0;
+      return res.json({ money });
+    }
+    return res.status(400).json({ message: "Not an admin" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+router.get("/getTotalRevenueThisWeek", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const checkUser = await User.findById(id);
+    if (checkUser && checkUser.role === "admin") {
+      const startDate = moment().startOf("isoWeek").toDate();
+      const endDate = moment().endOf("isoWeek").toDate();
+      const totalAmount = await Payment.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startDate, $lte: endDate },
+            success: true,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+      ]);
+      const money = totalAmount.length > 0 ? totalAmount[0].totalAmount : 0;
+      return res.json({ money });
+    }
+    return res.status(400).json({ message: "Not an admin" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get(
+  "/getTotalRevenueThisWeektwentypercent",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.headers;
+      const checkUser = await User.findById(id);
+      if (checkUser && checkUser.role === "admin") {
+        const startDate = moment().startOf("isoWeek").toDate();
+        const endDate = moment().endOf("isoWeek").toDate();
+        const totalAmount = await Payment.aggregate([
+          {
+            $match: {
+              createdAt: { $gte: startDate, $lte: endDate },
+              success: true,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalAmount: { $sum: "$amount" },
+            },
+          },
+        ]);
+        const money = totalAmount.length > 0 ? totalAmount[0].totalAmount : 0;
+        const revenue = (money * 0.2).toFixed(2); // Round off revenue to 2 decimal places
+        return res.json({ money: revenue });
+      }
+      return res.status(400).json({ message: "Not an admin" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+router.get(
+  "/getTotalRevenueThisMonthTwentyPercent",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.headers;
+      const checkUser = await User.findById(id);
+      if (checkUser && checkUser.role === "admin") {
+        const startDate = moment().startOf("month").toDate();
+        const endDate = moment().endOf("month").toDate();
+        const totalAmount = await Payment.aggregate([
+          {
+            $match: {
+              createdAt: { $gte: startDate, $lte: endDate },
+              success: true,
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalAmount: { $sum: "$amount" },
+            },
+          },
+        ]);
+        const money = totalAmount.length > 0 ? totalAmount[0].totalAmount : 0;
+        const revenue = (money * 0.2).toFixed(2); // Round off revenue to 2 decimal places
+        return res.json({ money: revenue });
+      }
+      return res.status(400).json({ message: "Not an admin" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+router.get(
+  "/getTotalRevenueTwentyPercent",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.headers;
+      const checkUser = await User.findById(id);
+      let money = 0;
+      if (checkUser && checkUser.role === "admin") {
+        const payments = await Payment.find({ success: true });
+
+        for (let payment of payments) {
+          money += payment.amount;
+        }
+
+        const revenue = (money * 0.2).toFixed(2); // Round off revenue to 2 decimal places
+        return res.json({ money: revenue });
+      }
+      return res.status(400).json({ message: "Not an admin" });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
+//getwithdrawl history
+router.get("/withdrawl-history", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.headers;
+    const checkUser = await User.findById(id);
+    if (checkUser && checkUser.role === "admin") {
+      const withdrawls = await Withdraw.find()
+        .populate({
+          path: "user",
+          select: "-password", // Exclude password field
+          populate: { path: "bankDetails" }, // Populate bank details
+        })
+        .sort({ createdAt: -1 });
+      return res.status(200).json({ withdrawls: withdrawls });
+    }
+    return res.status(400).json({ message: "Not an admin" });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//confirm the withdrawl request of tutor
+router.put(
+  "/confirm-withdrawlRequest/:withdrawlid",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { id } = req.headers;
+      const { withdrawlid } = req.params;
+      const { status } = req.body;
+      const checkUser = await User.findById(id);
+      if (checkUser && checkUser.role === "admin") {
+        const withdrawlConfirm = await Withdraw.findByIdAndUpdate(withdrawlid, {
+          status: status,
+        });
+        if (status === "Success") {
+          const user = await Withdraw.findById(withdrawlid).populate("user");
+          var transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: "ghaiprabhghai@gmail.com",
+              pass: "cqqw nnyh xxof nxqw",
+            },
+          });
+
+          var mailOptions = {
+            from: "ghaiprabhghai@gmail.com",
+            to: user.user.email,
+            subject: "Payment Success",
+            html: `<b>Dear User,</b>
+                 <p>Your withdrawl amount of Rs ${user.amount} has been credited to your bank account successfully.</p>
+                 <p>Best regards,<br/>LivEdu Team</p>`,
+          };
+
+          transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+              return res
+                .status(400)
+                .json({ message: "Error while sending email" });
+            } else {
+              return res.status(200).json({ message: "Email sent" });
+            }
+          });
+        }
+
+        return res.status(200).json({ message: "Status updated successfully" });
+      }
+      return res.status(400).json({ message: "Not an admin" });
+    } catch (error) {
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
 module.exports = router;

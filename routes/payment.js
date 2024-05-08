@@ -68,6 +68,13 @@ router.post(
         await Course.findByIdAndUpdate(courseId, {
           $push: { studentsEnrolled: paymentBy },
         });
+        var transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: "ghaiprabhghai@gmail.com",
+            pass: "cqqw nnyh xxof nxqw",
+          },
+        });
         var mailOptions = {
           from: "ghaiprabhghai@gmail.com",
           to: tutor.email,
